@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Shelly.EditLocationPage"
+             Title="Edit Location"
+             BackgroundColor="#111814">
+
+    <Grid Padding="20">
+        <Border
+            BackgroundColor="#f9faf7"
+            Stroke="#26342c"
+            StrokeThickness="1"
+            VerticalOptions="Center">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="8" />
+            </Border.StrokeShape>
+
+            <VerticalStackLayout Padding="20" Spacing="14">
+                <Label
+                    Text="Edit location"
+                    FontSize="22"
+                    FontAttributes="Bold"
+                    TextColor="#111814" />
+
+                <Label
+                    Text="Target scene"
+                    TextColor="#26342c" />
+                <Picker
+                    x:Name="TargetScenePicker"
+                    ItemDisplayBinding="{Binding Name}"
+                    TextColor="#111814" />
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <VerticalStackLayout Spacing="6">
+                        <Label
+                            Text="Yaw"
+                            TextColor="#26342c" />
+                        <Entry
+                            x:Name="YawEntry"
+                            TextColor="#111814"
+                            PlaceholderColor="#607066"
+                            Keyboard="Numeric"
+                            ReturnType="Next" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Column="1" Spacing="6">
+                        <Label
+                            Text="Pitch"
+                            TextColor="#26342c" />
+                        <Entry
+                            x:Name="PitchEntry"
+                            TextColor="#111814"
+                            PlaceholderColor="#607066"
+                            Keyboard="Numeric"
+                            ReturnType="Done" />
+                    </VerticalStackLayout>
+                </Grid>
+
+                <Grid
+                    ColumnDefinitions="*,*"
+                    ColumnSpacing="12"
+                    Margin="0,10,0,0">
+                    <Button
+                        Text="Cancel"
+                        BackgroundColor="#A65A5A"
+                        TextColor="#111814"
+                        Clicked="OnCancelClicked" />
+                    <Button
+                        Grid.Column="1"
+                        Text="Save"
+                        BackgroundColor="#5F8A6A"
+                        TextColor="#ffffff"
+                        Clicked="OnSaveClicked" />
+                </Grid>
+
+                <Button
+                    Text="Delete"
+                    BackgroundColor="#7A3434"
+                    TextColor="#ffffff"
+                    Clicked="OnDeleteClicked" />
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+
+</ContentPage>

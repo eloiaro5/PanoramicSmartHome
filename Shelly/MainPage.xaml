@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Shelly.MainPage"
+             BackgroundColor="#111814">
+
+    <Grid Padding="16">
+        <Border
+            BackgroundColor="#f5f6f3"
+            Stroke="#26342c"
+            StrokeThickness="1">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="8" />
+            </Border.StrokeShape>
+
+            <AbsoluteLayout x:Name="RoomCanvas">
+                <WebView
+                    x:Name="PanoramaWebView"
+                    AbsoluteLayout.LayoutBounds="0,0,1,1"
+                    AbsoluteLayout.LayoutFlags="All" />
+
+                <AbsoluteLayout
+                    x:Name="SwitchLayer"
+                    InputTransparent="True"
+                    CascadeInputTransparent="False"
+                    AbsoluteLayout.LayoutBounds="0,0,1,1"
+                    AbsoluteLayout.LayoutFlags="All" />
+
+                <Border
+                    WidthRequest="56"
+                    HeightRequest="56"
+                    BackgroundColor="#26342c"
+                    Stroke="#ffffff"
+                    StrokeThickness="1"
+                    AbsoluteLayout.LayoutBounds="0.98,16,56,56"
+                    AbsoluteLayout.LayoutFlags="XProportional"
+                    SemanticProperties.Description="Add switch">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8" />
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnAddTapped" />
+                    </Border.GestureRecognizers>
+
+                    <AbsoluteLayout>
+                        <BoxView
+                            Color="#ffffff"
+                            AbsoluteLayout.LayoutBounds="25,14,6,28" />
+                        <BoxView
+                            Color="#ffffff"
+                            AbsoluteLayout.LayoutBounds="14,25,28,6" />
+                    </AbsoluteLayout>
+                </Border>
+
+            </AbsoluteLayout>
+        </Border>
+    </Grid>
+
+</ContentPage>

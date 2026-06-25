@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Shelly.AddPage"
+             Title="Add"
+             BackgroundColor="#111814">
+
+    <Grid Padding="20">
+        <Border
+            BackgroundColor="#f9faf7"
+            Stroke="#26342c"
+            StrokeThickness="1"
+            VerticalOptions="Center">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="8" />
+            </Border.StrokeShape>
+
+            <VerticalStackLayout Padding="20" Spacing="14">
+                <Label
+                    Text="Menu"
+                    FontSize="22"
+                    FontAttributes="Bold"
+                    TextColor="#111814" />
+
+                <Button
+                    Text="Scene"
+                    BackgroundColor="#26342c"
+                    TextColor="#ffffff"
+                    Clicked="OnAddSceneClicked" />
+
+                <Button
+                    Text="Location"
+                    BackgroundColor="#ffffff"
+                    BorderColor="#26342c"
+                    BorderWidth="1"
+                    TextColor="#111814"
+                    Clicked="OnAddLocationClicked" />
+
+                <Button
+                    Text="Device"
+                    BackgroundColor="#d7ded6"
+                    TextColor="#111814"
+                    Clicked="OnAddDeviceClicked" />
+
+                <Button
+                    Text="Cancel"
+                    BackgroundColor="#A65A5A"
+                    TextColor="#111814"
+                    Margin="0,10,0,0"
+                    Clicked="OnCancelClicked" />
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+
+</ContentPage>

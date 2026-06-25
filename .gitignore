@@ -1,0 +1,58 @@
+# Build output
+bin/
+obj/
+[Bb]uild/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+arm/
+arm64/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# .NET
+*.nupkg
+*.snupkg
+project.lock.json
+project.assets.json
+artifacts/
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# MAUI / platform generated files
+**/Platforms/**/bin/
+**/Platforms/**/obj/
+*.apk
+*.aab
+*.ipa
+*.app
+*.appx
+*.msix
+*.msixbundle
+*.appxbundle
+
+# Local app data and generated images
+AppData/
+Resources/Images/Scenes/*.tmp
+
+# Temporary and backup files
+*.tmp
+*.bak
+*.orig
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini

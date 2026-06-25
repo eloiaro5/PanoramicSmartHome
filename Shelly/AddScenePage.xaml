@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Shelly.AddScenePage"
+             Title="Scene"
+             BackgroundColor="#111814">
+
+    <Grid Padding="20">
+        <Border
+            BackgroundColor="#f9faf7"
+            Stroke="#26342c"
+            StrokeThickness="1"
+            VerticalOptions="Center">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="8" />
+            </Border.StrokeShape>
+
+            <VerticalStackLayout Padding="20" Spacing="14">
+                <Label
+                    x:Name="TitleLabel"
+                    Text="Scene"
+                    FontSize="22"
+                    FontAttributes="Bold"
+                    TextColor="#111814" />
+
+                <Label
+                    Text="Scene name"
+                    TextColor="#26342c" />
+                <Entry
+                    x:Name="NameEntry"
+                    Placeholder="Living room"
+                    TextColor="#111814"
+                    PlaceholderColor="#607066"
+                    ReturnType="Done"
+                    Completed="OnNameCompleted"
+                    Unfocused="OnNameUnfocused" />
+
+                <Label
+                    Text="Panorama image"
+                    TextColor="#26342c" />
+                <Button
+                    Text="Choose image"
+                    BackgroundColor="#d7ded6"
+                    TextColor="#111814"
+                    Clicked="OnChooseImageClicked" />
+                <Label
+                    x:Name="SelectedImageLabel"
+                    Text="No image selected"
+                    TextColor="#607066"
+                    LineBreakMode="TailTruncation" />
+
+                <Grid
+                    ColumnDefinitions="*,*"
+                    ColumnSpacing="12"
+                    Margin="0,10,0,0">
+                    <Button
+                        Text="Cancel"
+                        BackgroundColor="#A65A5A"
+                        TextColor="#111814"
+                        Clicked="OnCancelClicked" />
+                    <Button
+                        Grid.Column="1"
+                        Text="Save"
+                        BackgroundColor="#5F8A6A"
+                        TextColor="#ffffff"
+                        Clicked="OnSaveClicked" />
+                </Grid>
+
+                <Button
+                    x:Name="DeleteButton"
+                    Text="Delete"
+                    BackgroundColor="#7A3434"
+                    TextColor="#ffffff"
+                    IsVisible="False"
+                    Clicked="OnDeleteClicked" />
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+
+</ContentPage>
