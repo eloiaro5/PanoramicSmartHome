@@ -5,6 +5,7 @@ namespace Shelly
     public partial class AddSwitchPage : ContentPage
     {
         private readonly IReadOnlyList<DeviceHotspot> switches;
+        private readonly List<string> groupNames = [];
         private DeviceHotspot? loadedSwitch;
 
         public AddSwitchPage()
@@ -64,6 +65,10 @@ namespace Shelly
             TitleLabel.Text = "Edit switch";
             NameEntry.Text = deviceHotspot.Name;
             IpAddressEntry.Text = deviceHotspot.IpAddress;
+            groupNames.Clear();
+            groupNames.AddRange(deviceHotspot.GroupNames);
+            GroupsEntry.Text = string.Empty;
+            RefreshGroupBubbles();
             YawEntry.Text = deviceHotspot.Yaw.ToString(CultureInfo.InvariantCulture);
             PitchEntry.Text = deviceHotspot.Pitch.ToString(CultureInfo.InvariantCulture);
             DeleteButton.IsVisible = true;
@@ -78,6 +83,7 @@ namespace Shelly
         {
             string name = NameEntry.Text?.Trim() ?? string.Empty;
             string ipAddress = IpAddressEntry.Text?.Trim() ?? string.Empty;
+            AddPendingGroups();
 
             if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(ipAddress))
             {
@@ -107,6 +113,7 @@ namespace Shelly
                 {
                     Name = name,
                     IpAddress = ipAddress,
+                    GroupNames = [.. groupNames],
                     Yaw = yaw,
                     Pitch = pitch,
                     CurrentState = DeviceState.Waiting
@@ -117,6 +124,7 @@ namespace Shelly
 
             loadedSwitch.Name = name;
             loadedSwitch.IpAddress = ipAddress;
+            loadedSwitch.GroupNames = [.. groupNames];
             loadedSwitch.Yaw = yaw;
             loadedSwitch.Pitch = pitch;
 
@@ -144,6 +152,54 @@ namespace Shelly
 
             SwitchDeleted?.Invoke(this, loadedSwitch);
             await Navigation.PopModalAsync();
+        }
+
+        private void OnGroupsTextChanged(object? sender, TextChangedEventArgs e)
+        {
+            if (e.NewTextValue?.Contains(',') == true) AddPendingGroups();
+        }
+
+        private void OnGroupsCompleted(object? sender, EventArgs e) => AddPendingGroups();
+
+        private void OnAddGroupsClicked(object? sender, EventArgs e) => AddPendingGroups();
+
+        private void AddPendingGroups()
+        {
+            string[] names = (GroupsEntry.Text ?? string.Empty)
+                .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            GroupsEntry.Text = string.Empty;
+
+            foreach (string name in names)
+            {
+                if (!groupNames.Contains(name, StringComparer.OrdinalIgnoreCase)) groupNames.Add(name);
+            }
+
+            RefreshGroupBubbles();
+        }
+
+        private void RefreshGroupBubbles()
+        {
+            GroupBubbles.Children.Clear();
+
+            foreach (string name in groupNames)
+            {
+                var button = new Button
+                {
+                    Text = $"{name}  ×",
+                    BackgroundColor = Color.FromArgb("#D7DED6"),
+                    TextColor = Color.FromArgb("#111814"),
+                    CornerRadius = 18,
+                    Margin = new Thickness(0, 0, 8, 8),
+                    Padding = new Thickness(12, 0)
+                };
+                SemanticProperties.SetDescription(button, $"Remove group {name}");
+                button.Clicked += (_, _) =>
+                {
+                    groupNames.Remove(name);
+                    RefreshGroupBubbles();
+                };
+                GroupBubbles.Children.Add(button);
+            }
         }
 
         private bool TryReadPosition(out float yaw, out float pitch)

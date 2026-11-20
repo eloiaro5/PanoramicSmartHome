@@ -6,6 +6,7 @@ The current app lets you:
 
 - Create panoramic scenes from local images.
 - Add Shelly device hotspots with a name, IP address, yaw, and pitch.
+- Assign optional group names to each device in the device editor.
 - Add location hotspots to move between scenes.
 - Persist scenes, hotspots, and the last visited camera position in local JSON storage.
 - Toggle Shelly switches through HTTPS calls and show their current state in the panorama.

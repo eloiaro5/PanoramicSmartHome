@@ -17,6 +17,9 @@ public sealed class DeviceHotspot : INotifyPropertyChanged
 
     public Guid SceneId { get; set; }
 
+    /// <summary>Names of the groups this device belongs to.</summary>
+    public List<string> GroupNames { get; set; } = [];
+
     public string Name
     {
         get => name;

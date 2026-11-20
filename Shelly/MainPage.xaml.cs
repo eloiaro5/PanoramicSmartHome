@@ -11,6 +11,7 @@ namespace Shelly
         private static readonly TimeSpan LongPressDelay = TimeSpan.FromSeconds(1);
         private static readonly TimeSpan DeviceResponseTimeout = TimeSpan.FromSeconds(5);
         private readonly HouseDataRepository repository = new();
+        private readonly SemaphoreSlim sceneLoadLock = new(1, 1);
         private readonly Dictionary<DeviceHotspot, Button> hotspotViews = [];
         private readonly Dictionary<LocationHotspot, Button> locationViews = [];
         private readonly List<DeviceHotspot> hotspots = [];
@@ -59,14 +60,20 @@ namespace Shelly
 
         private async Task LoadPanoramaSceneAsync(PanoramaScene scene)
         {
+            await sceneLoadLock.WaitAsync();
+            try
+            {
             currentScene = scene;
             lastSceneId = scene.Id;
 
-            await using Stream imageStream = await OpenSceneImageAsync(scene.ImagePath);
-            using var memoryStream = new MemoryStream();
-            await imageStream.CopyToAsync(memoryStream);
+            string sceneDirectory = Path.Combine(FileSystem.CacheDirectory, "Panorama", scene.Id.ToString("N"));
+            Directory.CreateDirectory(sceneDirectory);
+            string imageFileName = "image" + Path.GetExtension(scene.ImagePath);
+            string imagePath = Path.Combine(sceneDirectory, imageFileName);
 
-            string base64Image = Convert.ToBase64String(memoryStream.ToArray());
+            await using (Stream imageStream = await OpenSceneImageAsync(scene.ImagePath))
+            await using (FileStream imageFile = File.Create(imagePath))
+                await imageStream.CopyToAsync(imageFile);
 
             List<DeviceHotspot> sceneDevices = hotspots
                 .Where(hotspot => hotspot.SceneId == scene.Id)
@@ -75,16 +82,21 @@ namespace Shelly
                 .Where(location => location.SourceSceneId == scene.Id)
                 .ToList();
 
-            PanoramaWebView.Source = new HtmlWebViewSource
-            {
-                Html = CreatePanoramaTestHtml(base64Image, scene.Name, sceneDevices, sceneLocations, lastYaw, lastPitch)
-            };
+            string htmlPath = Path.Combine(sceneDirectory, "index.html");
+            string html = CreatePanoramaTestHtml(Uri.EscapeDataString(imageFileName), scene.Name, sceneDevices, sceneLocations, lastYaw, lastPitch);
+            await File.WriteAllTextAsync(htmlPath, html);
+            PanoramaWebView.Source = new Uri(htmlPath).AbsoluteUri;
 
             _ = SaveDataAsync();
+            }
+            finally
+            {
+                sceneLoadLock.Release();
+            }
         }
 
         private static string CreatePanoramaTestHtml(
-            string base64Image,
+            string imageUrl,
             string sceneName,
             IReadOnlyCollection<DeviceHotspot> deviceHotspots,
             IReadOnlyCollection<LocationHotspot> locationHotspots,
@@ -202,7 +214,7 @@ namespace Shelly
 <body>
   <main id="viewer">
     <section id="stage">
-      <img id="panorama" src="data:image/jpeg;base64,{{base64Image}}" alt="{{encodedSceneName}} panorama" draggable="false">
+      <img id="panorama" src="{{imageUrl}}" alt="{{encodedSceneName}} panorama" draggable="false">
     </section>
     <nav class="controls" aria-label="Panorama controls">
       <button class="control left" type="button" data-pan-x="1">←</button>

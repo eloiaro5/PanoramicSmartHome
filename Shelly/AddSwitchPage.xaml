@@ -5,6 +5,7 @@
              Title="Switch"
              BackgroundColor="#111814">
 
+    <ScrollView>
     <Grid Padding="20">
         <Border
             BackgroundColor="#f9faf7"
@@ -45,6 +46,27 @@
                     PlaceholderColor="#607066"
                     Keyboard="Url"
                     ReturnType="Done" />
+
+                <Label
+                    Text="Groups"
+                    TextColor="#26342c" />
+                <FlexLayout x:Name="GroupBubbles" Wrap="Wrap" />
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <Entry
+                        x:Name="GroupsEntry"
+                        Placeholder="Enter group names"
+                        TextColor="#111814"
+                        PlaceholderColor="#607066"
+                        ReturnType="Done"
+                        TextChanged="OnGroupsTextChanged"
+                        Completed="OnGroupsCompleted" />
+                    <Button
+                        Grid.Column="1"
+                        Text="Add"
+                        BackgroundColor="#5F8A6A"
+                        TextColor="#ffffff"
+                        Clicked="OnAddGroupsClicked" />
+                </Grid>
 
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                     <VerticalStackLayout Spacing="6">
@@ -101,5 +123,6 @@
             </VerticalStackLayout>
         </Border>
     </Grid>
+    </ScrollView>
 
 </ContentPage>
