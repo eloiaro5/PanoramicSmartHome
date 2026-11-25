@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Shelly.SimpleSwitchPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#111814">
+
+    <Grid Padding="16">
+        <Button
+            x:Name="SwitchButton"
+            Text="⏻"
+            FontSize="120"
+            FontAttributes="Bold"
+            BackgroundColor="#26342c"
+            TextColor="#f5f6f3"
+            BorderColor="#607066"
+            BorderWidth="1"
+            CornerRadius="16"
+            HorizontalOptions="Fill"
+            VerticalOptions="Fill"
+            SemanticProperties.Description="Toggle switch"
+            Clicked="OnSwitchClicked" />
+
+        <Grid
+            HorizontalOptions="End"
+            VerticalOptions="Start"
+            Margin="12"
+            WidthRequest="52"
+            HeightRequest="52">
+            <Button
+                BackgroundColor="#f5f6f3"
+                BorderColor="#26342c"
+                BorderWidth="1"
+                CornerRadius="12"
+                SemanticProperties.Description="Open scene map"
+                Clicked="OnMapClicked" />
+            <Path
+                InputTransparent="True"
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                Stroke="#26342c"
+                StrokeThickness="2"
+                StrokeLineJoin="Round"
+                Data="M 2,5 L 9,2 L 16,5 L 23,2 L 23,19 L 16,22 L 9,19 L 2,22 Z M 9,2 L 9,19 M 16,5 L 16,22" />
+        </Grid>
+    </Grid>
+</ContentPage>

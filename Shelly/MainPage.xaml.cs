@@ -16,6 +16,9 @@ namespace Shelly
         private readonly Dictionary<LocationHotspot, Button> locationViews = [];
         private readonly List<DeviceHotspot> hotspots = [];
         private readonly List<LocationHotspot> locationHotspots = [];
+        private readonly List<GroupHotspot> groupHotspots = [];
+        private readonly HashSet<Guid> operatingGroups = [];
+        private readonly SemaphoreSlim groupCommandLock = new(1, 1);
         private readonly List<PanoramaScene> scenes = [];
         private PanoramaScene? currentScene;
         private Guid? lastSceneId;
@@ -83,7 +86,8 @@ namespace Shelly
                 .ToList();
 
             string htmlPath = Path.Combine(sceneDirectory, "index.html");
-            string html = CreatePanoramaTestHtml(Uri.EscapeDataString(imageFileName), scene.Name, sceneDevices, sceneLocations, lastYaw, lastPitch);
+            List<GroupHotspot> sceneGroups = [.. groupHotspots.Where(group => group.SceneId == scene.Id)];
+            string html = CreatePanoramaTestHtml(Uri.EscapeDataString(imageFileName), scene.Name, sceneDevices, sceneLocations, sceneGroups, lastYaw, lastPitch);
             await File.WriteAllTextAsync(htmlPath, html);
             PanoramaWebView.Source = new Uri(htmlPath).AbsoluteUri;
 
@@ -100,11 +104,12 @@ namespace Shelly
             string sceneName,
             IReadOnlyCollection<DeviceHotspot> deviceHotspots,
             IReadOnlyCollection<LocationHotspot> locationHotspots,
+            IReadOnlyCollection<GroupHotspot> groupHotspots,
             float initialYaw,
             float initialPitch)
         {
             string hotspotsJson = JsonSerializer.Serialize(
-                BuildHtmlHotspots(deviceHotspots, locationHotspots),
+                BuildHtmlHotspots(deviceHotspots, locationHotspots, groupHotspots),
                 new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -182,6 +187,15 @@ namespace Shelly
       color: #000;
       background: #fff;
       font-size: 22px;
+    }
+
+    .group-hotspot {
+      min-width: 52px;
+      height: 52px;
+      padding: 0 10px;
+      border-radius: 16px;
+      color: #111814;
+      background: #d7ded6;
     }
 
     .controls {
@@ -324,10 +338,17 @@ namespace Shelly
 
       let longPressTimer = null;
       let longPressHandled = false;
+      let singlePressTimer = null;
+      let secondPress = false;
 
       element.addEventListener('pointerdown', event => {
         event.preventDefault();
         longPressHandled = false;
+        secondPress = singlePressTimer !== null;
+        if (secondPress) {
+          window.clearTimeout(singlePressTimer);
+          singlePressTimer = null;
+        }
         longPressTimer = window.setTimeout(() => {
           longPressHandled = true;
           window.location.href = `shelly://${hotspot.kind}/${hotspot.id}/long`;
@@ -339,7 +360,16 @@ namespace Shelly
         window.clearTimeout(longPressTimer);
 
         if (!longPressHandled) {
-          window.location.href = `shelly://${hotspot.kind}/${hotspot.id}/tap`;
+          if (hotspot.kind === 'location') {
+            window.location.href = `shelly://${hotspot.kind}/${hotspot.id}/tap`;
+          } else if (secondPress) {
+            window.location.href = `shelly://${hotspot.kind}/${hotspot.id}/double`;
+          } else {
+            singlePressTimer = window.setTimeout(() => {
+              singlePressTimer = null;
+              window.location.href = `shelly://${hotspot.kind}/${hotspot.id}/tap`;
+            }, 350);
+          }
         }
       });
 
@@ -361,7 +391,8 @@ namespace Shelly
 
         private static IEnumerable<HtmlHotspot> BuildHtmlHotspots(
             IReadOnlyCollection<DeviceHotspot> deviceHotspots,
-            IReadOnlyCollection<LocationHotspot> locationHotspots)
+            IReadOnlyCollection<LocationHotspot> locationHotspots,
+            IReadOnlyCollection<GroupHotspot> groupHotspots)
         {
             foreach (DeviceHotspot hotspot in deviceHotspots)
             {
@@ -385,6 +416,11 @@ namespace Shelly
                     "X",
                     "#ffffff",
                     "#000000");
+            }
+
+            foreach (GroupHotspot group in groupHotspots)
+            {
+                yield return new HtmlHotspot("group", group.Id, YawToPercent(group.Yaw), PitchToPercent(group.Pitch), group.GroupName, "#d7ded6", "#111814");
             }
         }
 
@@ -424,7 +460,7 @@ namespace Shelly
                 .Where(hotspot => hotspot.SceneId == currentScene.Id)
                 .ToList();
 
-            var addPage = new AddPage(scenes, sceneDevices, currentScene.Id, currentScene);
+            var addPage = new AddPage(scenes, sceneDevices, currentScene.Id, currentScene, hotspots);
             addPage.SceneCreated += OnSceneCreated;
             addPage.SceneUpdated += OnSceneUpdated;
             addPage.SceneDeleted += OnSceneDeleted;
@@ -432,6 +468,7 @@ namespace Shelly
             addPage.DeviceCreated += OnHotspotCreated;
             addPage.DeviceUpdated += OnHotspotUpdated;
             addPage.DeviceDeleted += OnHotspotDeleted;
+            addPage.GroupCreated += OnGroupCreated;
 
             await Navigation.PushModalAsync(addPage);
         }
@@ -490,6 +527,10 @@ namespace Shelly
                 {
                     await OpenEditHotspotPageAsync(hotspot);
                 }
+                else if (action == "double")
+                {
+                    await OpenSimpleSwitchAsync(() => ToggleDeviceAsync(hotspot));
+                }
             }
             else if (kind == "location")
             {
@@ -509,6 +550,20 @@ namespace Shelly
                     await OpenEditLocationPageAsync(locationHotspot);
                 }
             }
+            else if (kind == "group")
+            {
+                GroupHotspot? group = groupHotspots.SingleOrDefault(item => item.Id == hotspotId);
+                if (group is null) return;
+                if (action == "tap") await ToggleGroupAsync(group);
+                else if (action == "long") await OpenEditGroupPageAsync(group);
+                else if (action == "double") await OpenSimpleSwitchAsync(() => ToggleGroupAsync(group));
+            }
+        }
+
+        private async Task OpenSimpleSwitchAsync(Func<Task> toggleAsync)
+        {
+            var page = new SimpleSwitchPage(toggleAsync);
+            await Navigation.PushModalAsync(page);
         }
 
         private void OnHotspotCreated(object? sender, DeviceHotspot hotspot)
@@ -527,6 +582,13 @@ namespace Shelly
         private void OnLocationCreated(object? sender, LocationHotspot locationHotspot)
         {
             locationHotspots.Add(locationHotspot);
+            ReloadCurrentScene();
+            _ = SaveDataAsync();
+        }
+
+        private void OnGroupCreated(object? sender, GroupHotspot group)
+        {
+            groupHotspots.Add(group);
             ReloadCurrentScene();
             _ = SaveDataAsync();
         }
@@ -556,6 +618,7 @@ namespace Shelly
         {
             scenes.Remove(scene);
             hotspots.RemoveAll(hotspot => hotspot.SceneId == scene.Id);
+            groupHotspots.RemoveAll(group => group.SceneId == scene.Id);
             locationHotspots.RemoveAll(location =>
                 location.SourceSceneId == scene.Id ||
                 location.TargetSceneId == scene.Id);
@@ -783,8 +846,86 @@ namespace Shelly
             hotspot.CurrentState = DeviceState.Failed;
                 ReloadCurrentScene();
                 _ = SaveDataAsync();
-                await DisplayAlertAsync("Switch error", ex.Message, "OK");
+                await ShowSwitchAlertAsync("Switch error", ex.Message);
             }
+        }
+
+        private async Task OpenEditGroupPageAsync(GroupHotspot group)
+        {
+            var page = new GroupHotspotPage(hotspots, group.SceneId, group);
+            page.GroupUpdated += (_, _) => { ReloadCurrentScene(); _ = SaveDataAsync(); };
+            page.GroupDeleted += (_, item) => { groupHotspots.Remove(item); ReloadCurrentScene(); _ = SaveDataAsync(); };
+            await Navigation.PushModalAsync(page);
+        }
+
+        private async Task ToggleGroupAsync(GroupHotspot group)
+        {
+            if (!operatingGroups.Add(group.Id)) return;
+            await groupCommandLock.WaitAsync();
+            try
+            {
+                List<DeviceHotspot> members = [.. hotspots.Where(device =>
+                    device.GroupNames.Contains(group.GroupName, StringComparer.OrdinalIgnoreCase))];
+                if (members.Count == 0)
+                {
+                    await ShowSwitchAlertAsync("Group is empty", "No devices currently belong to this group.");
+                    return;
+                }
+
+                List<string> errors = [];
+                foreach (DeviceHotspot device in members)
+                {
+                    try
+                    {
+                        using var timeout = new CancellationTokenSource(DeviceResponseTimeout);
+                        using var status = await new ShellySwitch(device.Name, device.IpAddress).ReadStatusAsync(timeout.Token);
+                        if (!status.RootElement.TryGetProperty("output", out var output) ||
+                            output.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                            throw new InvalidOperationException("The switch response did not contain a valid output state.");
+                        device.CurrentState = output.GetBoolean() ? DeviceState.On : DeviceState.Off;
+                    }
+                    catch (Exception ex)
+                    {
+                        device.CurrentState = DeviceState.Failed;
+                        errors.Add($"{device.Name}: {ex.Message}");
+                    }
+                }
+
+                if (errors.Count == 0)
+                {
+                    bool turnOn = members.Any(device => device.CurrentState != DeviceState.On);
+                    foreach (DeviceHotspot device in members)
+                    {
+                        try
+                        {
+                            using var timeout = new CancellationTokenSource(DeviceResponseTimeout);
+                            var deviceSwitch = new ShellySwitch(device.Name, device.IpAddress);
+                            if (turnOn) await deviceSwitch.TurnOnAsync(timeout.Token);
+                            else await deviceSwitch.TurnOffAsync(timeout.Token);
+                            device.CurrentState = turnOn ? DeviceState.On : DeviceState.Off;
+                        }
+                        catch (Exception ex)
+                        {
+                            device.CurrentState = DeviceState.Failed;
+                            errors.Add($"{device.Name}: {ex.Message}");
+                        }
+                    }
+                }
+                ReloadCurrentScene();
+                await SaveDataAsync();
+                if (errors.Count > 0) await ShowSwitchAlertAsync("Group error", string.Join("\n", errors));
+            }
+            finally
+            {
+                groupCommandLock.Release();
+                operatingGroups.Remove(group.Id);
+            }
+        }
+
+        private Task ShowSwitchAlertAsync(string title, string message)
+        {
+            Page page = Navigation.ModalStack.LastOrDefault() ?? this;
+            return page.DisplayAlertAsync(title, message, "OK");
         }
 
         private async Task OpenEditHotspotPageAsync(DeviceHotspot hotspot)
@@ -985,6 +1126,8 @@ namespace Shelly
 
             locationHotspots.Clear();
             locationHotspots.AddRange(data.LocationHotspots);
+            groupHotspots.Clear();
+            groupHotspots.AddRange(data.GroupHotspots);
         }
 
         private Task SaveDataAsync()
@@ -996,7 +1139,8 @@ namespace Shelly
                 LastPitch = lastPitch,
                 Scenes = [.. scenes],
                 DeviceHotspots = [.. hotspots],
-                LocationHotspots = [.. locationHotspots]
+                LocationHotspots = [.. locationHotspots],
+                GroupHotspots = [.. groupHotspots]
             });
         }
 

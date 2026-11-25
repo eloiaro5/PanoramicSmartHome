@@ -4,6 +4,7 @@ namespace Shelly
     {
         private readonly IReadOnlyList<PanoramaScene> scenes;
         private readonly IReadOnlyList<DeviceHotspot> devices;
+        private readonly IReadOnlyList<DeviceHotspot> allDevices;
         private readonly Guid currentSceneId;
         private readonly PanoramaScene? currentScene;
 
@@ -11,12 +12,14 @@ namespace Shelly
             IReadOnlyList<PanoramaScene> scenes,
             IReadOnlyList<DeviceHotspot> devices,
             Guid currentSceneId,
-            PanoramaScene? currentScene)
+            PanoramaScene? currentScene,
+            IReadOnlyList<DeviceHotspot>? allDevices = null)
         {
             InitializeComponent();
 
             this.scenes = scenes;
             this.devices = devices;
+            this.allDevices = allDevices ?? devices;
             this.currentSceneId = currentSceneId;
             this.currentScene = currentScene;
         }
@@ -34,6 +37,19 @@ namespace Shelly
         public event EventHandler<DeviceHotspot>? DeviceUpdated;
 
         public event EventHandler<DeviceHotspot>? DeviceDeleted;
+
+        public event EventHandler<GroupHotspot>? GroupCreated;
+
+        private async void OnAddGroupClicked(object? sender, EventArgs e)
+        {
+            var page = new GroupHotspotPage(allDevices, currentSceneId);
+            page.GroupCreated += (_, group) =>
+            {
+                GroupCreated?.Invoke(this, group);
+                _ = CloseMenuAfterChildClosesAsync();
+            };
+            await Navigation.PushModalAsync(page);
+        }
 
         private async void OnAddSceneClicked(object? sender, EventArgs e)
         {

@@ -43,6 +43,12 @@
                     Clicked="OnAddDeviceClicked" />
 
                 <Button
+                    Text="Group button"
+                    BackgroundColor="#d7ded6"
+                    TextColor="#111814"
+                    Clicked="OnAddGroupClicked" />
+
+                <Button
                     Text="Cancel"
                     BackgroundColor="#A65A5A"
                     TextColor="#111814"

@@ -56,4 +56,6 @@ public sealed class HouseData
     public List<DeviceHotspot> DeviceHotspots { get; set; } = [];
 
     public List<LocationHotspot> LocationHotspots { get; set; } = [];
+
+    public List<GroupHotspot> GroupHotspots { get; set; } = [];
 }
